@@ -7,6 +7,7 @@ type Prefill = { name: string; email: string; subject: string; category: string 
 export default function Chat() {
   const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   // Generate a stable session id once per mount
   const sessionIdRef = useRef<string>(Math.random().toString(36).slice(2))
   const [prefill, setPrefill] = useState<Prefill>({ name: '', email: '', subject: '', category: 'General' })
@@ -25,6 +26,7 @@ export default function Chat() {
       const related = Array.isArray(msg.related) ? msg.related : []
       console.log('🔍 FRONTEND: Processed related array:', related, 'Length:', related.length)
       setMessages(m => [...m, { role: 'assistant', content: msg.content, showResolutionButtons: showButtons, related }])
+      setIsLoading(false) // Stop loading when response received
     }
     
     // Listen for ANY Socket.IO event to test
@@ -101,6 +103,7 @@ export default function Chat() {
     const text = input.trim()
     if (!text) return
     setMessages(m => [...m, { role: 'user', content: text }])
+    setIsLoading(true) // Start loading when sending message
     socket.emit('chat_message', {
       session_id: sessionIdRef.current,
       content: text,
@@ -295,6 +298,25 @@ export default function Chat() {
             </div>
           </div>
         ))}
+        
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%]">
+              <div className="inline-flex items-start gap-2 flex-row">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium bg-gray-200 text-gray-700">
+                  AI
+                </div>
+                <div className="px-4 py-3 rounded-2xl shadow-sm bg-gray-100 text-gray-900">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                    <span className="text-sm">AI is thinking...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <form className="bg-white border rounded-xl p-4 shadow-sm" onSubmit={send}>
         <div className="flex gap-3">
