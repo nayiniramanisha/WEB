@@ -35,6 +35,10 @@ export default function Chat() {
       // This keeps the connection alive during AI processing
     }
     
+    const onPong = (msg: any) => {
+      console.log('🔍 FRONTEND: Pong received:', msg)
+    }
+    
     // Listen for ANY Socket.IO event to test
     socket.onAny((eventName, ...args) => {
       console.log('🔍 FRONTEND: Received Socket.IO event:', eventName, args)
@@ -45,11 +49,13 @@ export default function Chat() {
     
     socket.on('bot_message', onBot)
     socket.on('processing_started', onProcessingStarted)
+    socket.on('pong', onPong)
     
     return () => { 
       console.log('🔍 FRONTEND: Cleaning up Socket.IO listeners')
       socket.off('bot_message', onBot)
       socket.off('processing_started', onProcessingStarted)
+      socket.off('pong', onPong)
     }
   }, [])
 
