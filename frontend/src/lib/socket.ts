@@ -5,23 +5,25 @@ console.log('🔍 Socket connecting to:', socketUrl)
 
 export const socket = io(socketUrl, {
   autoConnect: true,
-  // Let the client negotiate transport (polling -> websocket upgrade) for broader compatibility
-  // Explicitly set the default Socket.IO path
+  // Simplified configuration for better compatibility
   path: '/socket.io',
-  // Add connection stability settings
+  // Connection settings
   timeout: 20000,
-  forceNew: false, // Don't force new connections
+  forceNew: false,
   transports: ['polling', 'websocket'],
   upgrade: true,
-  rememberUpgrade: true, // Remember successful upgrades
-  // Match server timeout settings
+  rememberUpgrade: false, // Don't remember upgrades to avoid conflicts
+  // Timeout settings
   pingTimeout: 60000,
   pingInterval: 25000,
-  // Add reconnection settings
+  // Reconnection settings
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10, // More attempts
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
+  reconnectionDelayMax: 10000, // Longer max delay
+  // Additional stability settings
+  randomizationFactor: 0.5,
+  maxReconnectionAttempts: 10,
 })
 
 // Add connection event listeners for debugging

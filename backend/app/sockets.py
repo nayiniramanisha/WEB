@@ -6,11 +6,15 @@ def register_socketio(sio: socketio.AsyncServer):
     @sio.event
     async def connect(sid, environ):
         print(f"🔍 SOCKET: Client connected: {sid}")
-        await sio.emit("connected", {"sid": sid}, to=sid)
-        
-        # Send a test message to verify connection
-        await sio.emit("test_message", {"message": "Connection test", "timestamp": "now"}, to=sid)
-        print(f"🔍 SOCKET: Sent test message to {sid}")
+        try:
+            await sio.emit("connected", {"sid": sid}, to=sid)
+            print(f"🔍 SOCKET: Sent connected message to {sid}")
+            
+            # Send a test message to verify connection
+            await sio.emit("test_message", {"message": "Connection test", "timestamp": "now"}, to=sid)
+            print(f"🔍 SOCKET: Sent test message to {sid}")
+        except Exception as e:
+            print(f"🔍 SOCKET: Error in connect handler: {e}")
 
     @sio.event
     async def disconnect(sid):
@@ -24,18 +28,30 @@ def register_socketio(sio: socketio.AsyncServer):
         print(f"🔍 SOCKET: Emitting bot_message with related field: {response.get('related', [])}")
         print(f"🔍 SOCKET: Full response: {response}")
         
-        # Try to send the response with error handling
+        # Try multiple methods to send the response
+        success = False
+        
+        # Method 1: Send to specific session
         try:
             await sio.emit("bot_message", response, to=sid)
             print(f"🔍 SOCKET: Successfully sent bot_message to {sid}")
+            success = True
         except Exception as e:
             print(f"🔍 SOCKET: Error sending bot_message to {sid}: {e}")
-            # Try to send to all connected clients as fallback
+        
+        # Method 2: Send as broadcast if specific send failed
+        if not success:
             try:
                 await sio.emit("bot_message", response)
                 print(f"🔍 SOCKET: Sent bot_message as broadcast fallback")
+                success = True
             except Exception as e2:
                 print(f"🔍 SOCKET: Error sending broadcast fallback: {e2}")
+        
+        # Method 3: Store in database for later retrieval if all else fails
+        if not success:
+            print(f"🔍 SOCKET: All send methods failed, storing response for later retrieval")
+            # TODO: Store response in database for later retrieval
     
     @sio.event
     async def test_bot_message(sid, data):

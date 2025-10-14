@@ -29,21 +29,20 @@ def create_app() -> FastAPI:
     app.include_router(tickets.router, prefix=settings.API_PREFIX, tags=["tickets"])
     app.include_router(admin.router, prefix=settings.API_PREFIX, tags=["admin"])
 
-    # Socket.IO
+    # Socket.IO - Simplified configuration for better compatibility
     sio = socketio.AsyncServer(
         async_mode="asgi", 
-        cors_allowed_origins=[
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "https://csupportchat.netlify.app",
-            "https://*.netlify.app"
-        ],
+        cors_allowed_origins="*",  # Allow all origins for now
         # Increase timeout settings to prevent disconnections
         ping_timeout=60,
         ping_interval=25,
         max_http_buffer_size=1000000,
         allow_upgrades=True,
-        transports=['polling', 'websocket']
+        transports=['polling', 'websocket'],
+        # Add session management settings
+        always_connect=True,
+        logger=True,
+        engineio_logger=True
     )
     asgi_app = socketio.ASGIApp(sio, other_asgi_app=app)
     register_socketio(sio)
