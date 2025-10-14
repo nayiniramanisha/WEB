@@ -9,6 +9,36 @@ from ..core.security import require_admin
 router = APIRouter()
 
 
+@router.get("/tickets/resolution-stats", dependencies=[Depends(require_admin)])
+def get_resolution_stats():
+    """Get ticket resolution statistics for admin dashboard"""
+    conn = get_postgres_connection()
+    cur = conn.cursor()
+    
+    # Get resolution stats
+    cur.execute("""
+        SELECT 
+            COUNT(*) as total,
+            COUNT(CASE WHEN status = 'resolved' THEN 1 END) as resolved,
+            COUNT(CASE WHEN status = 'open' THEN 1 END) as open,
+            COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
+            COUNT(CASE WHEN status = 'escalated' THEN 1 END) as escalated
+        FROM tickets
+    """)
+    
+    stats = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    return {
+        "total": stats[0],
+        "resolved": stats[1],
+        "open": stats[2],
+        "in_progress": stats[3],
+        "escalated": stats[4]
+    }
+
+
 @router.get("/tickets", response_model=List[Ticket], dependencies=[Depends(require_admin)])
 def list_tickets(
     q: Optional[str] = Query(None, description="Search in name/email/subject"),

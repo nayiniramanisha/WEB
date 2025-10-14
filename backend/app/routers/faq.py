@@ -19,6 +19,14 @@ def list_faq():
     return items
 
 
+@router.post("/faq/generate", dependencies=[Depends(require_admin)])
+def generate_faq():
+    """Generate FAQ entries using AI - placeholder implementation"""
+    # This is a placeholder - in a real implementation, you'd use AI to generate FAQs
+    # For now, return a success message
+    return {"message": "FAQ generation feature not yet implemented", "generated": 0}
+
+
 @router.post("/faq", response_model=FAQ, dependencies=[Depends(require_admin)])
 def create_faq(item: FAQ):
     conn = get_postgres_connection(); cur = conn.cursor()
