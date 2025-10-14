@@ -32,6 +32,9 @@ export default function Chat() {
     // Listen for ANY Socket.IO event to test
     socket.onAny((eventName, ...args) => {
       console.log('🔍 FRONTEND: Received Socket.IO event:', eventName, args)
+      if (eventName === 'bot_message') {
+        console.log('🔍 FRONTEND: BOT MESSAGE EVENT DETECTED!', args)
+      }
     })
     
     socket.on('bot_message', onBot)
