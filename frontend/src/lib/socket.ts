@@ -8,6 +8,15 @@ export const socket = io(socketUrl, {
   // Let the client negotiate transport (polling -> websocket upgrade) for broader compatibility
   // Explicitly set the default Socket.IO path
   path: '/socket.io',
+  // Add connection stability settings
+  timeout: 20000,
+  forceNew: true,
+  transports: ['polling', 'websocket'],
+  upgrade: true,
+  rememberUpgrade: false,
+  // Increase ping timeout to prevent disconnections
+  pingTimeout: 60000,
+  pingInterval: 25000,
 })
 
 // Add connection event listeners for debugging
@@ -21,6 +30,11 @@ socket.on('connect_error', (error) => {
 
 socket.on('disconnect', (reason) => {
   console.log('🔍 Socket disconnected:', reason)
+  // Auto-reconnect on disconnect
+  if (reason === 'ping timeout' || reason === 'transport close') {
+    console.log('🔍 Attempting to reconnect...')
+    socket.connect()
+  }
 })
 
 // Make socket available globally for debugging
