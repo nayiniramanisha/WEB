@@ -24,11 +24,20 @@ def register_socketio(sio: socketio.AsyncServer):
     @sio.event
     async def chat_message(sid, data):
         # data: { session_id, content, user_email? }
+        
+        # Send immediate acknowledgment to keep connection alive
+        try:
+            await sio.emit("processing_started", {"message": "AI is processing your request..."}, to=sid)
+            print(f"🔍 SOCKET: Sent processing_started to {sid}")
+        except Exception as e:
+            print(f"🔍 SOCKET: Error sending processing_started: {e}")
+        
+        # Process the message (this takes time)
         response = await handle_incoming_message(data)
         print(f"🔍 SOCKET: Emitting bot_message with related field: {response.get('related', [])}")
         print(f"🔍 SOCKET: Full response: {response}")
         
-        # Try multiple methods to send the response
+        # Send the final response
         success = False
         
         # Method 1: Send to specific session

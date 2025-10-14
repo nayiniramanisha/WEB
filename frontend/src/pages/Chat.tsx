@@ -29,6 +29,12 @@ export default function Chat() {
       setIsLoading(false) // Stop loading when response received
     }
     
+    const onProcessingStarted = (msg: any) => {
+      console.log('🔍 FRONTEND: Processing started:', msg)
+      // Keep loading state active, don't stop it yet
+      // This keeps the connection alive during AI processing
+    }
+    
     // Listen for ANY Socket.IO event to test
     socket.onAny((eventName, ...args) => {
       console.log('🔍 FRONTEND: Received Socket.IO event:', eventName, args)
@@ -38,9 +44,12 @@ export default function Chat() {
     })
     
     socket.on('bot_message', onBot)
+    socket.on('processing_started', onProcessingStarted)
+    
     return () => { 
       console.log('🔍 FRONTEND: Cleaning up Socket.IO listeners')
-      socket.off('bot_message', onBot) 
+      socket.off('bot_message', onBot)
+      socket.off('processing_started', onProcessingStarted)
     }
   }, [])
 

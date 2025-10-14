@@ -7,23 +7,23 @@ export const socket = io(socketUrl, {
   autoConnect: true,
   // Simplified configuration for better compatibility
   path: '/socket.io',
-  // Connection settings
-  timeout: 20000,
+  // Connection settings - increased for AI processing
+  timeout: 120000, // 2 minutes timeout for AI processing
   forceNew: false,
   transports: ['polling', 'websocket'],
   upgrade: true,
-  rememberUpgrade: false, // Don't remember upgrades to avoid conflicts
-  // Timeout settings
-  pingTimeout: 60000,
-  pingInterval: 25000,
+  rememberUpgrade: false,
+  // Extended timeout settings for AI processing
+  pingTimeout: 120000, // 2 minutes - enough for AI processing
+  pingInterval: 30000, // 30 seconds - less frequent pings
   // Reconnection settings
   reconnection: true,
-  reconnectionAttempts: 10, // More attempts
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 10000, // Longer max delay
+  reconnectionAttempts: 15, // More attempts
+  reconnectionDelay: 2000, // Longer initial delay
+  reconnectionDelayMax: 15000, // Longer max delay
   // Additional stability settings
   randomizationFactor: 0.5,
-  maxReconnectionAttempts: 10,
+  maxReconnectionAttempts: 15,
 })
 
 // Add connection event listeners for debugging

@@ -29,13 +29,13 @@ def create_app() -> FastAPI:
     app.include_router(tickets.router, prefix=settings.API_PREFIX, tags=["tickets"])
     app.include_router(admin.router, prefix=settings.API_PREFIX, tags=["admin"])
 
-    # Socket.IO - Simplified configuration for better compatibility
+    # Socket.IO - Extended configuration for AI processing
     sio = socketio.AsyncServer(
         async_mode="asgi", 
         cors_allowed_origins="*",  # Allow all origins for now
-        # Increase timeout settings to prevent disconnections
-        ping_timeout=60,
-        ping_interval=25,
+        # Extended timeout settings for AI processing
+        ping_timeout=120,  # 2 minutes - enough for AI processing
+        ping_interval=30,  # 30 seconds - less frequent pings
         max_http_buffer_size=1000000,
         allow_upgrades=True,
         transports=['polling', 'websocket'],
