@@ -13,7 +13,12 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "http://localhost:3000",
+            "http://localhost:5173", 
+            "https://csupportchat.netlify.app",
+            "https://*.netlify.app"
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -25,7 +30,15 @@ def create_app() -> FastAPI:
     app.include_router(admin.router, prefix=settings.API_PREFIX, tags=["admin"])
 
     # Socket.IO
-    sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+    sio = socketio.AsyncServer(
+        async_mode="asgi", 
+        cors_allowed_origins=[
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://csupportchat.netlify.app",
+            "https://*.netlify.app"
+        ]
+    )
     asgi_app = socketio.ASGIApp(sio, other_asgi_app=app)
     register_socketio(sio)
     register_events(app)
