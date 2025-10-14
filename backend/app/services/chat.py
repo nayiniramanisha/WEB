@@ -53,8 +53,8 @@ async def handle_incoming_message(data: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
     # Track user activity timestamp for auto-resolve logic
-    redis = get_redis_client()
     try:
+        redis = get_redis_client()
         redis.set(f"last_user:{session_id}", str(int(time.time())))
         # Any new user message cancels pending auto-resolve
         redis.delete(f"pending_resolve:{session_id}")
@@ -78,20 +78,29 @@ async def handle_incoming_message(data: Dict[str, Any]) -> Dict[str, Any]:
         _store_chat(session_id, role="assistant", content="Great! I've marked your case as resolved. Thank you for confirming!")
         return {"session_id": session_id, "role": "assistant", "content": "Great! I've marked your case as resolved. Thank you for confirming!", "related": _related_questions(category)}
 
-    cached = redis.get(f"faq:{content.lower()}")
-    if cached:
-        answer = cached
-        _store_chat(session_id, role="assistant", content=answer)
-        # Check if this FAQ answer might resolve the issue
-        if _should_suggest_resolution(answer, content):
-            answer += "\n\n✅ Does this answer resolve your issue? If so, please let me know by saying 'yes, resolved' or 'that helps, thanks'."
-            _schedule_auto_resolve(session_id, user_email, delay_seconds=120)
-        return {"session_id": session_id, "role": "assistant", "content": answer, "related": _related_questions(category)}
+    # Try Redis cache (optional - app works without it)
+    try:
+        cached = redis.get(f"faq:{content.lower()}")
+        if cached:
+            answer = cached
+            _store_chat(session_id, role="assistant", content=answer)
+            # Check if this FAQ answer might resolve the issue
+            if _should_suggest_resolution(answer, content):
+                answer += "\n\n✅ Does this answer resolve your issue? If so, please let me know by saying 'yes, resolved' or 'that helps, thanks'."
+                _schedule_auto_resolve(session_id, user_email, delay_seconds=120)
+            return {"session_id": session_id, "role": "assistant", "content": answer, "related": _related_questions(category)}
+    except Exception:
+        # Redis not available, continue without cache
+        pass
 
     # naive answer using FAQs in Postgres
     answer = _lookup_faq_answer(content)
     if answer:
-        redis.setex(f"faq:{content.lower()}", 3600, answer)
+        # Try to cache in Redis (optional)
+        try:
+            redis.setex(f"faq:{content.lower()}", 3600, answer)
+        except Exception:
+            pass
         # Check if this FAQ answer might resolve the issue
         if _should_suggest_resolution(answer, content):
             answer += "\n\n✅ Does this answer resolve your issue? If so, please let me know by saying 'yes, resolved' or 'that helps, thanks'."
@@ -107,6 +116,7 @@ async def handle_incoming_message(data: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
         try:
+            redis = get_redis_client()
             redis.setex(f"faq:{content.lower()}", 3600, gemini_answer)
         except Exception:
             pass
@@ -463,18 +473,24 @@ def _related_questions(category: str | None, limit: int = 3) -> List[str]:
 
 
 def _increment_failure_counter(session_id: str) -> int:
-    redis = get_redis_client()
-    key = f"fail:{session_id}"
-    val = redis.incr(key)
-    # set ttl for rolling window
-    if val == 1:
-        redis.expire(key, 900)
-    return int(val)
+    try:
+        redis = get_redis_client()
+        key = f"fail:{session_id}"
+        val = redis.incr(key)
+        # set ttl for rolling window
+        if val == 1:
+            redis.expire(key, 900)
+        return int(val)
+    except Exception:
+        return 0
 
 
 def _reset_failure_counter(session_id: str) -> None:
-    redis = get_redis_client()
-    redis.delete(f"fail:{session_id}")
+    try:
+        redis = get_redis_client()
+        redis.delete(f"fail:{session_id}")
+    except Exception:
+        pass
 
 
 def _create_ticket(user_email: str, subject: str, description: str, category: str | None = None, customer_name: str | None = None, session_id: str | None = None, status: str = 'open') -> None:
@@ -571,14 +587,17 @@ def _schedule_auto_resolve(session_id: str, user_email: str, delay_seconds: int 
 
         async def _task():
             await asyncio.sleep(delay_seconds)
-            r = get_redis_client()
-            # Abort if user interacted or flag cleared
-            flag = r.get(f"pending_resolve:{session_id}")
-            current_last = int(r.get(last_key) or 0)
-            if not flag or current_last > last_seen:
-                return
-            _mark_ticket_resolved(session_id, user_email)
-            _store_chat(session_id, role="assistant", content="Marking this case as resolved due to inactivity. If you still need help, just reply and we'll reopen.")
+            try:
+                r = get_redis_client()
+                # Abort if user interacted or flag cleared
+                flag = r.get(f"pending_resolve:{session_id}")
+                current_last = int(r.get(last_key) or 0)
+                if not flag or current_last > last_seen:
+                    return
+                _mark_ticket_resolved(session_id, user_email)
+                _store_chat(session_id, role="assistant", content="Marking this case as resolved due to inactivity. If you still need help, just reply and we'll reopen.")
+            except Exception:
+                pass
 
         # Fire and forget; FastAPI + uvicorn allows background tasks via asyncio.create_task
         try:
