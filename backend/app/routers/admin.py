@@ -8,6 +8,14 @@ from ..db.postgres import get_postgres_connection
 router = APIRouter()
 
 
+@router.get("/chat-sessions", dependencies=[Depends(require_admin)])
+def get_chat_sessions(limit: int = 50):
+    """Get chat sessions for admin panel - alias for /admin/chats"""
+    col = get_case_memory_collection()
+    docs = list(col.find({}, {"_id": 0}).sort("_id", -1).limit(limit))
+    return docs
+
+
 @router.get("/admin/chats", dependencies=[Depends(require_admin)])
 def get_chat_history(limit: int = 50):
     col = get_case_memory_collection()
