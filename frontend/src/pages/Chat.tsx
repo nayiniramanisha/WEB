@@ -14,28 +14,29 @@ export default function Chat() {
   const DRAFT_KEY = 'chat_draft'
 
   useEffect(() => {
-    // const onBot = (msg: any) => {
-    //   const showButtons = msg.content.includes('✅ Does this answer resolve your issue?')
-    //   const related = Array.isArray(msg.related) ? msg.related : []
-    //   setMessages(m => [...m, { role: 'assistant', content: msg.content, showResolutionButtons: showButtons, related }])
-    // }
-  
+    console.log('🔍 FRONTEND: Setting up Socket.IO listeners...')
+    console.log('🔍 FRONTEND: Socket available:', !!socket)
+    console.log('🔍 FRONTEND: Socket connected:', socket?.connected)
+    
     const onBot = (msg: any) => {
       console.log('🔍 FRONTEND: Bot message received:', JSON.stringify(msg, null, 2))
       console.log('🔍 FRONTEND: Related field:', msg.related, 'Is Array?', Array.isArray(msg.related), 'Length:', msg.related?.length)
       const showButtons = msg.content.includes('✅ Does this answer resolve your issue?')
       const related = Array.isArray(msg.related) ? msg.related : []
       console.log('🔍 FRONTEND: Processed related array:', related, 'Length:', related.length)
-      console.log('🔍 FRONTEND: Adding message to state...')
-      setMessages(m => {
-        console.log('🔍 FRONTEND: Current messages before adding:', m.length)
-        const newMessages = [...m, { role: 'assistant', content: msg.content, showResolutionButtons: showButtons, related }]
-        console.log('🔍 FRONTEND: New messages after adding:', newMessages.length)
-        return newMessages
-      })
+      setMessages(m => [...m, { role: 'assistant', content: msg.content, showResolutionButtons: showButtons, related }])
     }
+    
+    // Listen for ANY Socket.IO event to test
+    socket.onAny((eventName, ...args) => {
+      console.log('🔍 FRONTEND: Received Socket.IO event:', eventName, args)
+    })
+    
     socket.on('bot_message', onBot)
-    return () => { socket.off('bot_message', onBot) }
+    return () => { 
+      console.log('🔍 FRONTEND: Cleaning up Socket.IO listeners')
+      socket.off('bot_message', onBot) 
+    }
   }, [])
 
   // Restore draft on mount
@@ -99,19 +100,15 @@ export default function Chat() {
     e?.preventDefault()
     const text = input.trim()
     if (!text) return
-    console.log('🔍 FRONTEND: Sending message:', text)
-    console.log('🔍 FRONTEND: Socket connected:', socket.connected)
     setMessages(m => [...m, { role: 'user', content: text }])
-    const messageData = {
+    socket.emit('chat_message', {
       session_id: sessionIdRef.current,
       content: text,
       user_email: prefill.email,
       customer_name: prefill.name,
       subject: prefill.subject,
       category: prefill.category,
-    }
-    console.log('🔍 FRONTEND: Emitting chat_message with data:', messageData)
-    socket.emit('chat_message', messageData)
+    })
     setInput('')
   }
 
