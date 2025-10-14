@@ -37,7 +37,13 @@ def create_app() -> FastAPI:
             "http://localhost:5173",
             "https://csupportchat.netlify.app",
             "https://*.netlify.app"
-        ]
+        ],
+        # Increase timeout settings to prevent disconnections
+        ping_timeout=60,
+        ping_interval=25,
+        max_http_buffer_size=1000000,
+        allow_upgrades=True,
+        transports=['polling', 'websocket']
     )
     asgi_app = socketio.ASGIApp(sio, other_asgi_app=app)
     register_socketio(sio)

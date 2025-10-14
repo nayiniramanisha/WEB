@@ -10,13 +10,18 @@ export const socket = io(socketUrl, {
   path: '/socket.io',
   // Add connection stability settings
   timeout: 20000,
-  forceNew: true,
+  forceNew: false, // Don't force new connections
   transports: ['polling', 'websocket'],
   upgrade: true,
-  rememberUpgrade: false,
-  // Increase ping timeout to prevent disconnections
+  rememberUpgrade: true, // Remember successful upgrades
+  // Match server timeout settings
   pingTimeout: 60000,
   pingInterval: 25000,
+  // Add reconnection settings
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
 })
 
 // Add connection event listeners for debugging
