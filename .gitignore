@@ -1,0 +1,32 @@
+﻿# Node
+frontend/node_modules/
+frontend/.npm/
+frontend/.pnpm-store/
+frontend/dist/
+
+# Python
+backend/.venv/
+backend/venv/
+**/__pycache__/
+*.pyc
+
+# Env & secrets
+backend/.env
+.env
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+**/build/
+**/dist/
+
+# Cache
+.pytest_cache/
+**/.cache/
+
+# Misc
+*.log
