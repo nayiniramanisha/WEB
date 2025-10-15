@@ -9,6 +9,7 @@ from .startup import register_events
 
 
 def create_app() -> FastAPI:
+    print("🔍 APP: Starting FastAPI app - LATEST VERSION WITH HEARTBEAT SYSTEM")
     app = FastAPI(title="Customer Support Chatbot", openapi_url=f"{settings.API_PREFIX}/openapi.json")
 
     app.add_middleware(

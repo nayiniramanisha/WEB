@@ -3,6 +3,8 @@ from .services.chat import handle_incoming_message
 
 
 def register_socketio(sio: socketio.AsyncServer):
+    print("🔍 SOCKET: Registering Socket.IO handlers - LATEST VERSION WITH HEARTBEAT")
+    
     @sio.event
     async def connect(sid, environ):
         print(f"🔍 SOCKET: Client connected: {sid}")
